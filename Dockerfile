@@ -1,26 +1,23 @@
-FROM phusion/baseimage:0.9.18
+FROM phusion/baseimage:0.9.19
 MAINTAINER Nathan Hopkins <natehop@gmail.com>
 
-#RUN echo deb http://archive.ubuntu.com/ubuntu $(lsb_release -cs) main universe > /etc/apt/sources.list.d/universe.list
-RUN apt-get -y update\
- && apt-get -y upgrade
-
 # dependencies
-RUN apt-get -y --force-yes install vim\
- nginx\
- python-dev\
- python-flup\
- python-pip\
- python-ldap\
- expect\
- git\
- memcached\
- sqlite3\
- libcairo2\
- libcairo2-dev\
- python-cairo\
- pkg-config\
- nodejs
+RUN apt-get -y update && apt-get -y --force-yes install\
+    nginx\
+    python-dev\
+    python-flup\
+    python-pip\
+    python-ldap\
+    expect\
+    git\
+    memcached\
+    sqlite3\
+    libcairo2\
+    libcairo2-dev\
+    python-cairo\
+    pkg-config\
+    nodejs\
+  && rm -rf /var/lib/apt/lists/*
 
 # python dependencies
 RUN pip install django==1.5.12\
@@ -47,7 +44,7 @@ WORKDIR /usr/local/src/carbon
 RUN python ./setup.py install
 
 # install statsd
-RUN git clone -b v0.7.2 https://github.com/etsy/statsd.git /opt/statsd
+RUN git clone -b v0.8.0 https://github.com/etsy/statsd.git /opt/statsd
 ADD conf/opt/statsd/config.js /opt/statsd/config.js
 
 # config nginx
@@ -71,16 +68,13 @@ ADD conf/etc/service/statsd/run /etc/service/statsd/run
 ADD conf/etc/service/nginx/run /etc/service/nginx/run
 
 # default conf setup
-ADD conf /etc/graphite-statsd/conf
 ADD conf/etc/my_init.d/01_conf_init.sh /etc/my_init.d/01_conf_init.sh
 
 # cleanup
-RUN apt-get clean\
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/local/src
 
 # defaults
-EXPOSE 80:80 2003-2004:2003-2004 2023-2024:2023-2024 8125:8125/udp 8126:8126
-VOLUME ["/opt/graphite/conf", "/opt/graphite/storage", "/etc/nginx", "/opt/statsd", "/etc/logrotate.d", "/var/log"]
+VOLUME ["/opt/graphite/storage"]
 WORKDIR /
 ENV HOME /root
 CMD ["/sbin/my_init"]
